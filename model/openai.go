@@ -159,15 +159,14 @@ type OpenAIImagesGenerationRequest struct {
 }
 
 type OpenAIImagesGenerationResponse struct {
-	Created    int64                                 `json:"created"`
-	DailyLimit bool                                  `json:"dailyLimit"`
-	Data       []*OpenAIImagesGenerationDataResponse `json:"data"`
+	Created int64                                 `json:"created"`
+	Data    []*OpenAIImagesGenerationDataResponse `json:"data"`
 }
 
 type OpenAIImagesGenerationDataResponse struct {
-	URL           string `json:"url"`
-	RevisedPrompt string `json:"revised_prompt"`
-	B64Json       string `json:"b64_json"`
+	//URL           string `json:"url"`
+	//RevisedPrompt string `json:"revised_prompt"`
+	B64Json string `json:"b64_json"`
 }
 
 type OpenAIGPT4VImagesReq struct {
