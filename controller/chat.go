@@ -12,6 +12,7 @@ import (
 	"github.com/deanxv/CycleTLS/cycletls"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 	"github.com/samber/lo/mutable"
 	"io"
 	"net/http"
@@ -562,6 +563,14 @@ func ImageProcess(c *gin.Context, client cycletls.CycleTLS, openAIReq model.Open
 		// 提取字段
 		b64 := data["image_b64"].(string)
 
+		// 获取";base64,"后的Base64编码部分
+		dataParts := strings.Split(b64, ";base64,")
+		if len(dataParts) != 2 {
+			logger.Errorf(ctx, "Invalid base64 string: %s", b64)
+			return nil, fmt.Errorf("invalid base64 string")
+		}
+		b64 = dataParts[1]
+
 		result := &model.OpenAIImagesGenerationResponse{
 			Created: time.Now().Unix(),
 			Data:    make([]*model.OpenAIImagesGenerationDataResponse, 0, 1),
@@ -601,7 +610,7 @@ func createImageRequestBody(c *gin.Context, openAIReq *model.OpenAIImagesGenerat
 func OpenaiModels(c *gin.Context) {
 	var modelsResp []string
 
-	modelsResp = common.GetModelList()
+	modelsResp = lo.Union(common.GetModelList(), common.GetImageModelList())
 
 	var openaiModelListResponse model.OpenaiModelListResponse
 	var openaiModelResponse []model.OpenaiModelResponse
