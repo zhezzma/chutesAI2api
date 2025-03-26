@@ -1,0 +1,13 @@
+version: '3.4'
+
+services:
+  chutesai2api:
+    image: deanxv/chutesai2api:latest
+    container_name: chutesai2api
+    restart: always
+    ports:
+      - "7011:7011"
+    volumes:
+      - ./data:/app/chutesai2api/data
+    environment:
+      - TZ=Asia/Shanghai

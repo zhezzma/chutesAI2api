@@ -1,0 +1,371 @@
+definitions:
+  common.ResponseResult:
+    properties:
+      code:
+        type: integer
+      data: { }
+      message:
+        type: string
+    type: object
+  model.ApiKeyResp:
+    properties:
+      apiKey:
+        description: ApiKey apiKey
+        type: string
+      createTime:
+        description: CreateTime 创建时间
+        type: string
+      id:
+        description: Id Id
+        type: string
+      remark:
+        description: Remark 备注
+        type: string
+    type: object
+  model.ApiKeySaveReq:
+    properties:
+      apiKey:
+        description: ApiKey apiKey
+        type: string
+      remark:
+        description: Remark 备注
+        type: string
+    type: object
+  model.ApiKeyUpdateReq:
+    properties:
+      apiKey:
+        description: ApiKey apiKey
+        type: string
+      id:
+        description: Id id
+        type: string
+      remark:
+        description: Remark 备注
+        type: string
+    type: object
+  model.CookieResp:
+    properties:
+      cookie:
+        description: Cookie cookie
+        type: string
+      createTime:
+        description: CreateTime 创建时间
+        type: string
+      credit:
+        description: Credit 额度
+        type: integer
+      id:
+        description: Id Id
+        type: string
+      remark:
+        description: Remark 备注
+        type: string
+    type: object
+  model.CookieSaveReq:
+    properties:
+      cookie:
+        description: Cookie cookie
+        type: string
+      remark:
+        description: Remark 备注
+        type: string
+    type: object
+  model.CookieUpdateReq:
+    properties:
+      cookie:
+        description: Cookie cookie
+        type: string
+      id:
+        description: Id Id
+        type: string
+      remark:
+        description: Remark 备注
+        type: string
+    type: object
+  model.OpenAIChatCompletionRequest:
+    properties:
+      messages:
+        items:
+          $ref: '#/definitions/model.OpenAIChatMessage'
+        type: array
+      model:
+        type: string
+      stream:
+        type: boolean
+    type: object
+  model.OpenAIChatMessage:
+    properties:
+      content: { }
+      role:
+        type: string
+    type: object
+  model.OpenaiModelListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.OpenaiModelResponse'
+        type: array
+      object:
+        type: string
+    type: object
+  model.OpenaiModelResponse:
+    properties:
+      id:
+        type: string
+      object:
+        type: string
+    type: object
+info:
+  contact: { }
+  description: HIX-AI-2API
+  title: HIX-AI-2API
+  version: 1.0.0
+paths:
+  /api/cookie:
+    put:
+      consumes:
+        - application/json
+      description: 保存COOKIE
+      parameters:
+        - description: Authorization BACKEND_SECRET
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: COOKIE信息
+          in: body
+          name: req
+          required: true
+          schema:
+            $ref: '#/definitions/model.CookieSaveReq'
+      produces:
+        - application/json
+      responses: { }
+      tags:
+        - COOKIE
+  /api/cookie/{id}:
+    delete:
+      consumes:
+        - application/json
+      description: 删除COOKIE
+      parameters:
+        - description: Authorization BACKEND_SECRET
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: COOKIE ID
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses: { }
+      tags:
+        - COOKIE
+  /api/cookie/all:
+    get:
+      consumes:
+        - application/json
+      description: 查询全量COOKIE
+      parameters:
+        - description: Authorization BACKEND_SECRET
+          in: header
+          name: Authorization
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+              - $ref: '#/definitions/common.ResponseResult'
+              - properties:
+                  data:
+                    items:
+                      $ref: '#/definitions/model.CookieResp'
+                    type: array
+                type: object
+      tags:
+        - COOKIE
+  /api/cookie/credit/refresh:
+    post:
+      consumes:
+        - application/json
+      description: 同步更新全量COOKIE额度
+      parameters:
+        - description: Authorization BACKEND_SECRET
+          in: header
+          name: Authorization
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses: { }
+      tags:
+        - COOKIE
+  /api/cookie/update:
+    post:
+      consumes:
+        - application/json
+      description: 更新COOKIE
+      parameters:
+        - description: Authorization BACKEND_SECRET
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: COOKIE信息
+          in: body
+          name: req
+          required: true
+          schema:
+            $ref: '#/definitions/model.CookieUpdateReq'
+      produces:
+        - application/json
+      responses: { }
+      tags:
+        - COOKIE
+  /api/key:
+    put:
+      consumes:
+        - application/json
+      description: 保存API-KEY
+      parameters:
+        - description: Authorization BACKEND_SECRET
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: API-KEY信息
+          in: body
+          name: req
+          required: true
+          schema:
+            $ref: '#/definitions/model.ApiKeySaveReq'
+      produces:
+        - application/json
+      responses: { }
+      tags:
+        - API-KEY
+  /api/key/{id}:
+    delete:
+      consumes:
+        - application/json
+      description: 删除API-KEY
+      parameters:
+        - description: Authorization BACKEND_SECRET
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: API-KEY ID
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses: { }
+      tags:
+        - API-KEY
+  /api/key/all:
+    get:
+      consumes:
+        - application/json
+      description: 查询全量API-KEY
+      parameters:
+        - description: Authorization BACKEND_SECRET
+          in: header
+          name: Authorization
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+              - $ref: '#/definitions/common.ResponseResult'
+              - properties:
+                  data:
+                    items:
+                      $ref: '#/definitions/model.ApiKeyResp'
+                    type: array
+                type: object
+      tags:
+        - API-KEY
+  /api/key/update:
+    post:
+      consumes:
+        - application/json
+      description: 更新API-KEY
+      parameters:
+        - description: Authorization BACKEND_SECRET
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: API-KEY信息
+          in: body
+          name: req
+          required: true
+          schema:
+            $ref: '#/definitions/model.ApiKeyUpdateReq'
+      produces:
+        - application/json
+      responses: { }
+      tags:
+        - API-KEY
+  /v1/chat/completions:
+    post:
+      consumes:
+        - application/json
+      description: OpenAI对话接口
+      parameters:
+        - description: OpenAI对话请求
+          in: body
+          name: req
+          required: true
+          schema:
+            $ref: '#/definitions/model.OpenAIChatCompletionRequest'
+        - description: Authorization API-KEY
+          in: header
+          name: Authorization
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses: { }
+      tags:
+        - OpenAI
+  /v1/models:
+    get:
+      consumes:
+        - application/json
+      description: OpenAI模型列表接口
+      parameters:
+        - description: Authorization API-KEY
+          in: header
+          name: Authorization
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+              - $ref: '#/definitions/common.ResponseResult'
+              - properties:
+                  data:
+                    $ref: '#/definitions/model.OpenaiModelListResponse'
+                type: object
+      tags:
+        - OpenAI
+swagger: "2.0"
