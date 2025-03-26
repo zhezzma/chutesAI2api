@@ -12,7 +12,6 @@ type ModelInfo struct {
 	MaxTokens int
 }
 
-// 创建映射表（假设用 model 名称作为 key）
 var ModelRegistry = map[string]ModelInfo{
 	"deepseek-r1":                {"deepseek-ai/DeepSeek-R1", "de510462-c319-543b-9c67-00bcf807d2a7", "chutes-deepseek-ai-deepseek-r1", 100000},
 	"deepseek-v3-0324":           {"deepseek-ai/DeepSeek-V3-0324", "154ad01c-a431-5744-83c8-651215124360", "chutes-deepseek-ai-deepseek-v3-0324", 100000},
@@ -26,9 +25,30 @@ var ModelRegistry = map[string]ModelInfo{
 	"ui-tars-72b-dpo":            {"bytedance-research/UI-TARS-72B-DPO", "4d4b0ccf-88a5-5991-a741-df4e99dbf7a2", "chutes-bytedance-research-ui-tars-72b-dpo", 100000},
 }
 
+var ImageModelRegistry = map[string]ModelInfo{
+	"juggernautxl":            {"JuggernautXL", "d8a1a355-d555-5ff0-ac89-166a36cce3ad", "", 0},
+	"realistic-vision-v51":    {"stablediffusionapi/realistic-vision-v51", "f3e5e5c5-4271-52bb-a323-baa4cf71755e", "", 0},
+	"dreamshaper-xl-v2-turbo": {"Lykon/dreamshaper-xl-v2-turbo", "4aeda079-94d8-5ddf-9236-bb84e23b3751", "", 0},
+	"playground-v2.5":         {"Playground-v2.5", "a76dd2c1-2954-532c-9da8-f1796eabad80", "", 0},
+	"dreamshaper-xl-1-0":      {"Lykon/dreamshaper-xl-1-0", "7f3dc7d2-cc14-5575-88cb-3d39c99abc3f", "", 0},
+	"omnigen-v1":              {"Shitao/OmniGen-v1", "bd63c106-91b9-5937-a52f-bfc7753df770", "", 0},
+	"animepasteldream":        {"AnimePastelDream", "791ea6b9-04b6-5f75-9f42-b30259553277", "", 0},
+	"psychedelictrees":        {"PsychedelicTrees", "9f064d15-3bd0-5512-a21d-4ace7a4240e4", "", 0},
+	"orphic-lora":             {"orphic-lora", "2b3d74b5-fa25-551c-9ea0-240949530eb7", "", 0},
+	"constshaper":             {"diagonalge/ConstShaper", "d70bde34-0691-5eb5-af08-bf358b4e24ed", "", 0},
+	"flux.1-dev":              {"FLUX.1-dev", "2afe988d-be44-553f-9c85-3caa3d8c0f97", "", 0},
+	"flex.1-alpha":            {"ostris/Flex.1-alpha", "c11a7c12-d278-5d30-b5e2-d37d4d16b9da", "", 0},
+	"flux.1-schnell":          {"FLUX.1-schnell", "a292d47b-8f0f-5662-b2b0-6f0ebba48031", "", 0},
+}
+
 // 通过 model 名称查询的方法
 func GetModelInfo(modelName string) (ModelInfo, bool) {
 	info, exists := ModelRegistry[modelName]
+	return info, exists
+}
+
+func GetImageModelInfo(modelName string) (ModelInfo, bool) {
+	info, exists := ImageModelRegistry[modelName]
 	return info, exists
 }
 

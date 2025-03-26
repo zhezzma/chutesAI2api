@@ -6,6 +6,7 @@ import (
 	"chutesai2api/common/config"
 	logger "chutesai2api/common/loggger"
 	"chutesai2api/model"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/deanxv/CycleTLS/cycletls"
@@ -473,6 +474,122 @@ func processNoStreamData(c *gin.Context, data string, responseId, model string, 
 
 }
 
+func ImagesForOpenAI(c *gin.Context) {
+
+	client := cycletls.Init()
+	defer safeClose(client)
+
+	var openAIReq model.OpenAIImagesGenerationRequest
+	if err := c.BindJSON(&openAIReq); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	resp, err := ImageProcess(c, client, openAIReq)
+	if err != nil {
+		logger.Errorf(c.Request.Context(), fmt.Sprintf("ImageProcess err  %v\n", err))
+		c.JSON(http.StatusInternalServerError, model.OpenAIErrorResponse{
+			OpenAIError: model.OpenAIError{
+				Message: err.Error(),
+				Type:    "request_error",
+				Code:    "500",
+			},
+		})
+		return
+	} else {
+		c.JSON(200, resp)
+		return
+	}
+}
+
+func ImageProcess(c *gin.Context, client cycletls.CycleTLS, openAIReq model.OpenAIImagesGenerationRequest) (*model.OpenAIImagesGenerationResponse, error) {
+
+	var cookies []string
+	cookies = append(cookies, "test")
+
+	modelInfo, ok := common.GetImageModelInfo(openAIReq.Model)
+	if !ok {
+		c.JSON(500, gin.H{"error": "no model"})
+		return nil, fmt.Errorf("no model")
+	}
+
+	ctx := c.Request.Context()
+
+	mutable.Shuffle(cookies)
+
+	maxRetries := len(cookies)
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		cookie := cookies[attempt]
+		requestBody, err := createImageRequestBody(c, &openAIReq)
+		if err != nil {
+			logger.Errorf(ctx, "Failed to create request body: %v", err)
+			return nil, err
+		}
+
+		response, err := chutes_api.MakeImageRequest(c, client, requestBody, modelInfo.Id)
+		if err != nil {
+			logger.Errorf(ctx, "Failed to make image request: %v", err)
+			return nil, err
+		}
+
+		body := response.Body
+
+		switch {
+		case common.IsRateLimit(body):
+			logger.Warnf(ctx, "Cookie rate limited, switching to next cookie, attempt %d/%d, COOKIE:%s", attempt+1, maxRetries, cookie)
+			continue
+		case common.IsNotLogin(body):
+			logger.Warnf(ctx, "Cookie Not Login, switching to next cookie, attempt %d/%d, COOKIE:%s", attempt+1, maxRetries, cookie)
+			continue
+		}
+
+		decodedBytes, err := base64.StdEncoding.DecodeString(body)
+		if err != nil {
+			logger.Errorf(ctx, "Failed to decode base64: %v body: %s", err, body)
+			return nil, err
+		}
+
+		decodedStr := string(decodedBytes)
+
+		var data map[string]interface{}
+		err = json.Unmarshal([]byte(decodedStr), &data)
+		if err != nil {
+			logger.Errorf(ctx, "Failed to unmarshal response: %v", err)
+			return nil, err
+		}
+
+		// 提取字段
+		b64 := data["image_b64"].(string)
+
+		result := &model.OpenAIImagesGenerationResponse{
+			Created: time.Now().Unix(),
+			Data:    make([]*model.OpenAIImagesGenerationDataResponse, 0, 1),
+		}
+
+		// Process image URLs
+		dataResp := &model.OpenAIImagesGenerationDataResponse{
+			B64Json: b64,
+		}
+		result.Data = append(result.Data, dataResp)
+		return result, nil
+	}
+
+	logger.Errorf(ctx, "All cookies exhausted after %d attempts", maxRetries)
+	return nil, fmt.Errorf("all cookies are temporarily unavailable")
+}
+
+func createImageRequestBody(c *gin.Context, openAIReq *model.OpenAIImagesGenerationRequest) (chutes_api.MakeImageReq, error) {
+
+	makeImageReq := chutes_api.MakeImageReq{
+		Prompt: openAIReq.Prompt,
+	}
+
+	logger.Debug(c.Request.Context(), fmt.Sprintf("RequestBody: %v", makeImageReq))
+	return makeImageReq, nil
+
+}
+
 // OpenaiModels @Summary OpenAI模型列表接口
 // @Description OpenAI模型列表接口
 // @Tags OpenAI
@@ -481,57 +598,25 @@ func processNoStreamData(c *gin.Context, data string, responseId, model string, 
 // @Param Authorization header string true "Authorization API-KEY"
 // @Success 200 {object} common.ResponseResult{data=model.OpenaiModelListResponse} "成功"
 // @Router /v1/models [get]
-//func OpenaiModels(c *gin.Context) {
-//	var modelsResp []string
-//
-//	maxCookies, err := (&model.Cookie{}).FindMaxCreditByActiveSub(database.DB)
-//	if err != nil {
-//		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-//		return
-//	}
-//
-//	// 提取两种状态的credit
-//	var standardCredit, advancedCredit int
-//	hasStandard := false
-//	hasAdvanced := false
-//	for _, cookie := range maxCookies {
-//		if !cookie.IsActiveSub {
-//			standardCredit = cookie.Credit
-//			hasStandard = true
-//		} else {
-//			advancedCredit = cookie.AdvancedCredit
-//			hasAdvanced = true
-//		}
-//	}
-//
-//	// 遍历modelRegistry，收集符合条件的模型
-//	modelsResp = make([]string, 0)
-//	for modelName, info := range common.ModelRegistry {
-//		credit := info.Credit
-//		modelType := info.Type
-//
-//		if modelType == "STANDARD" && hasStandard && standardCredit >= credit {
-//			modelsResp = append(modelsResp, modelName)
-//		}
-//		if modelType == "ADVANCED" && hasAdvanced && advancedCredit >= credit {
-//			modelsResp = append(modelsResp, modelName)
-//		}
-//	}
-//
-//	var openaiModelListResponse model.OpenaiModelListResponse
-//	var openaiModelResponse []model.OpenaiModelResponse
-//	openaiModelListResponse.Object = "list"
-//
-//	for _, modelResp := range modelsResp {
-//		openaiModelResponse = append(openaiModelResponse, model.OpenaiModelResponse{
-//			ID:     modelResp,
-//			Object: "model",
-//		})
-//	}
-//	openaiModelListResponse.Data = openaiModelResponse
-//	c.JSON(http.StatusOK, openaiModelListResponse)
-//	return
-//}
+func OpenaiModels(c *gin.Context) {
+	var modelsResp []string
+
+	modelsResp = common.GetModelList()
+
+	var openaiModelListResponse model.OpenaiModelListResponse
+	var openaiModelResponse []model.OpenaiModelResponse
+	openaiModelListResponse.Object = "list"
+
+	for _, modelResp := range modelsResp {
+		openaiModelResponse = append(openaiModelResponse, model.OpenaiModelResponse{
+			ID:     modelResp,
+			Object: "model",
+		})
+	}
+	openaiModelListResponse.Data = openaiModelResponse
+	c.JSON(http.StatusOK, openaiModelListResponse)
+	return
+}
 
 func safeClose(client cycletls.CycleTLS) {
 	if client.ReqChan != nil {
@@ -541,67 +626,3 @@ func safeClose(client cycletls.CycleTLS) {
 		close(client.RespChan)
 	}
 }
-
-//func processUrl(c *gin.Context, client cycletls.CycleTLS, chatId, cookie string, url string) (string, error) {
-//	// 判断是否为URL
-//	if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
-//		// 下载文件
-//		bytes, err := fetchImageBytes(url)
-//		if err != nil {
-//			logger.Errorf(c.Request.Context(), fmt.Sprintf("fetchImageBytes err  %v\n", err))
-//			return "", fmt.Errorf("fetchImageBytes err  %v\n", err)
-//		}
-//
-//		base64Str := base64.StdEncoding.EncodeToString(bytes)
-//
-//		finalUrl, err := processBytes(c, client, chatId, cookie, base64Str)
-//		if err != nil {
-//			logger.Errorf(c.Request.Context(), fmt.Sprintf("processBytes err  %v\n", err))
-//			return "", fmt.Errorf("processBytes err  %v\n", err)
-//		}
-//		return finalUrl, nil
-//	} else {
-//		finalUrl, err := processBytes(c, client, chatId, cookie, url)
-//		if err != nil {
-//			logger.Errorf(c.Request.Context(), fmt.Sprintf("processBytes err  %v\n", err))
-//			return "", fmt.Errorf("processBytes err  %v\n", err)
-//		}
-//		return finalUrl, nil
-//	}
-//}
-
-//func fetchImageBytes(url string) ([]byte, error) {
-//	resp, err := http.Get(url)
-//	if err != nil {
-//		return nil, fmt.Errorf("http.Get err: %v\n", err)
-//	}
-//	defer resp.Body.Close()
-//
-//	return io.ReadAll(resp.Body)
-//}
-
-//func processBytes(c *gin.Context, client cycletls.CycleTLS, chatId, cookie string, base64Str string) (string, error) {
-//	// 检查类型
-//	fileType := common.DetectFileType(base64Str)
-//	if !fileType.IsValid {
-//		return "", fmt.Errorf("invalid file type %s", fileType.Extension)
-//	}
-//	signUrl, err := chutes_api.GetSignURL(client, cookie, chatId, fileType.Extension)
-//	if err != nil {
-//		logger.Errorf(c.Request.Context(), fmt.Sprintf("GetSignURL err  %v\n", err))
-//		return "", fmt.Errorf("GetSignURL err: %v\n", err)
-//	}
-//
-//	err = chutes_api.UploadToS3(client, signUrl, base64Str, fileType.MimeType)
-//	if err != nil {
-//		logger.Errorf(c.Request.Context(), fmt.Sprintf("UploadToS3 err  %v\n", err))
-//		return "", err
-//	}
-//
-//	u, err := url.Parse(signUrl)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	return fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, u.Path), nil
-//}

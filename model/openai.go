@@ -11,10 +11,6 @@ type OpenAIChatCompletionRequest struct {
 	Messages []OpenAIChatMessage `json:"messages"`
 }
 
-type OpenAIChatCompletionExtraRequest struct {
-	ChannelId *string `json:"channelId"`
-}
-
 type SessionState struct {
 	Models           []string `json:"models"`
 	Layers           int      `json:"layers"`
@@ -129,7 +125,6 @@ type OpenAIChatCompletionResponse struct {
 	Choices           []OpenAIChoice `json:"choices"`
 	Usage             OpenAIUsage    `json:"usage"`
 	SystemFingerprint *string        `json:"system_fingerprint"`
-	Suggestions       []string       `json:"suggestions"`
 }
 
 type OpenAIChoice struct {
@@ -157,7 +152,6 @@ type OpenAIDelta struct {
 }
 
 type OpenAIImagesGenerationRequest struct {
-	OpenAIChatCompletionExtraRequest
 	Model          string `json:"model"`
 	Prompt         string `json:"prompt"`
 	ResponseFormat string `json:"response_format"`
@@ -165,10 +159,9 @@ type OpenAIImagesGenerationRequest struct {
 }
 
 type OpenAIImagesGenerationResponse struct {
-	Created     int64                                 `json:"created"`
-	DailyLimit  bool                                  `json:"dailyLimit"`
-	Data        []*OpenAIImagesGenerationDataResponse `json:"data"`
-	Suggestions []string                              `json:"suggestions"`
+	Created    int64                                 `json:"created"`
+	DailyLimit bool                                  `json:"dailyLimit"`
+	Data       []*OpenAIImagesGenerationDataResponse `json:"data"`
 }
 
 type OpenAIImagesGenerationDataResponse struct {

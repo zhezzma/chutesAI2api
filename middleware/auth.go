@@ -13,7 +13,7 @@ func isValidSecret(secret string) bool {
 	if config.ApiSecret == "" {
 		return true
 	} else {
-		return !lo.Contains(config.ApiSecrets, secret)
+		return lo.Contains(config.ApiSecrets, secret)
 	}
 }
 func authHelperForOpenai(c *gin.Context) {
