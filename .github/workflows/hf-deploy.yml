@@ -28,7 +28,7 @@ jobs:
                     --exclude='.github' \
                     --exclude='.gitignore' \
                     --exclude='README.md' \
-                    --exclude='docs' \
+                    --exclude='docs/*.png' \
                     $GITHUB_WORKSPACE/ hf-repo/
           
           cd hf-repo
