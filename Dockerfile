@@ -20,6 +20,6 @@ RUN apk add --no-cache \
 
 COPY --from=builder /app/chutesai2api /chutesai2api
 
-EXPOSE 7011
+EXPOSE 7860
 WORKDIR /app/chutesai2api/data
 ENTRYPOINT ["/chutesai2api"]
